@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"github.com/codegangsta/cli"
 )
 
 func runDgc(c *cli.Context) {
+	fmt.println("Hello Test")
 }
 
 func main() {
