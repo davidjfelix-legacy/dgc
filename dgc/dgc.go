@@ -3,12 +3,13 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"github.com/codegangsta/cli"
+	"github.com/fsouza/go-dockerclient"
 )
 
 func runDgc(c *cli.Context) {
 	fmt.println("Hello Test")
+	
 }
 
 func main() {
@@ -21,26 +22,20 @@ func main() {
 	app.Flags = []cli.Flag {
 		cli.StringFlag {
 			Name: "grace, g",
-			Value: "3600",
-			Usage: "the grace period for a container, defualt time unit is seconds",
+			Value: "3600s",
+			Usage: "the grace period for a container. Accepted compostable time units: [h, m, s, ms, ns us]",
 			EnvVar: "GRACE_PERIOD_SECONDS,GRACE_PERIOD",
 		},
 		cli.StringFlag {
-			Name: "time-unit, t",
-			Value: "s",
-			Usage: "the time unit used for the grace period",
-			EnvVar: "GRACE_PERIOD_TIME_UNIT,TIME_UNIT",
-		},
-		cli.StringFlag {
-			Name: "docker, d",
-			Value: "docker",
-			Usage: "the docker executable",
-			EnvVar: "DOCKER",
+			Name: "socket, s",
+			Value: "unix:///var/run/docker.sock",
+			Usage: "the docker remote socket",
+			EnvVar: "DOCKER_SOCKET",
 		},
 		cli.StringFlag {
 			Name: "exclude, e",
 			Value: "/etc/docker-gc-exclude",
-			Usage: "the directory of the list of containers to exclude from garbage collection",
+			Usage: "the list of containers to exclude from garbage collection, as a file or directory",
 			EnvVar: "EXCLUDE_FROM_GC",
 		}
 	}
