@@ -8,18 +8,26 @@ import (
 )
 
 func runDgc(c *cli.Context) {
-	fmt.println("Hello Test")
-	
+    client, _ := docker.NewClient(c.String("socket"))
+    imgs, _ := client.ListImages(docker.ListImagesOptions{All: false})
+    for _, img := range imgs {
+        fmt.Println("ID: ", img.ID)
+        fmt.Println("RepoTags: ", img.RepoTags)
+        fmt.Println("Created: ", img.Created)
+        fmt.Println("Size: ", img.Size)
+        fmt.Println("VirtualSize: ", img.VirtualSize)
+        fmt.Println("ParentId: ", img.ParentID)
+    }
 }
 
 func main() {
-	app := cli.NewApp()
+	dgc := cli.NewApp()
 	dgc.Name = "dgc"
 	dgc.Usage = "A minimal docker garbage collector"
 	dgc.Version = "0.1.0"
 	dgc.Author = "David J Felix <davidjfelix@davidjfelix.com>"
 	dgc.Action = runDgc
-	app.Flags = []cli.Flag {
+	dgc.Flags = []cli.Flag {
 		cli.StringFlag {
 			Name: "grace, g",
 			Value: "3600s",
@@ -37,7 +45,7 @@ func main() {
 			Value: "/etc/docker-gc-exclude",
 			Usage: "the list of containers to exclude from garbage collection, as a file or directory",
 			EnvVar: "EXCLUDE_FROM_GC",
-		}
+		},
 	}
-	app.Run(os.Args)
+	dgc.Run(os.Args)
 }
