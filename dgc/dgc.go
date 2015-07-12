@@ -9,15 +9,21 @@ import (
 
 func runDgc(c *cli.Context) {
 	client, _ := docker.NewClient(c.String("socket"))
-	imgs, _ := client.ListImages(docker.ListImagesOptions{All: false})
+	images, _ := client.ListImages(docker.ListImagesOptions{All: false})
+	containers, _ := client.ListContainers(docker.ListContainersOptions{All: false})
+	for _, image := range images {
+		fmt.Println("ID: ", image.ID)
+		fmt.Println("RepoTags: ", image.RepoTags)
+		fmt.Println("Created: ", image.Created)
+		fmt.Println("Size: ", image.Size)
+		fmt.Println("VirtualSize: ", image.VirtualSize)
+		fmt.Println("ParentId: ", image.ParentID)
+	}
 
-	for _, img := range imgs {
-		fmt.Println("ID: ", img.ID)
-		fmt.Println("RepoTags: ", img.RepoTags)
-		fmt.Println("Created: ", img.Created)
-		fmt.Println("Size: ", img.Size)
-		fmt.Println("VirtualSize: ", img.VirtualSize)
-		fmt.Println("ParentId: ", img.ParentID)
+	for _, container := range containers {
+		fmt.Println("ID: ", container.ID)
+		fmt.Println("Image: ", container.Image)
+		fmt.Println("Command: ", container.Command)
 	}
 }
 
