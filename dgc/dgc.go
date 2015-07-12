@@ -8,16 +8,17 @@ import (
 )
 
 func runDgc(c *cli.Context) {
-    client, _ := docker.NewClient(c.String("socket"))
-    imgs, _ := client.ListImages(docker.ListImagesOptions{All: false})
-    for _, img := range imgs {
-        fmt.Println("ID: ", img.ID)
-        fmt.Println("RepoTags: ", img.RepoTags)
-        fmt.Println("Created: ", img.Created)
-        fmt.Println("Size: ", img.Size)
-        fmt.Println("VirtualSize: ", img.VirtualSize)
-        fmt.Println("ParentId: ", img.ParentID)
-    }
+	client, _ := docker.NewClient(c.String("socket"))
+	imgs, _ := client.ListImages(docker.ListImagesOptions{All: false})
+
+	for _, img := range imgs {
+		fmt.Println("ID: ", img.ID)
+		fmt.Println("RepoTags: ", img.RepoTags)
+		fmt.Println("Created: ", img.Created)
+		fmt.Println("Size: ", img.Size)
+		fmt.Println("VirtualSize: ", img.VirtualSize)
+		fmt.Println("ParentId: ", img.ParentID)
+	}
 }
 
 func main() {
