@@ -12,4 +12,4 @@ WORKDIR /opt/dgc
 RUN go build -a -ldflags '-s'
 RUN ln -s /opt/dgc/dgc /usr/local/bin
 
-ENTRYPOINT ["dgc"]
+CMD ["dgc"]
