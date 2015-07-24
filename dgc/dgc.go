@@ -1,32 +1,60 @@
 package main
 
 import (
-	"fmt"
-	"errors"
 	"os"
 	"time"
+	"sync"
 	"github.com/codegangsta/cli"
 	"github.com/fsouza/go-dockerclient"
 )
 
-func collectAPIImages(images []APIImages, client *Client, ctx *cli.Context) (error) {
+func collectAPIImages(images []docker.APIImages, client *docker.Client, ctx *cli.Context) {
+	var imageSync sync.WaitGroup
+	for _, image := range images {
+		imageSync.Add(1)
+		go func(image *docker.APIImages, client *docker.Client, grace time.Duration, output bool) {
+			defer imageSync.Done()
+			imageDetail, _ := client.InspectImage(image.ID)
+			handleImage(imageDetail, client, grace, output)
+		}(&image, client, ctx.Duration("grace"), ctx.Bool("verbose"))
+	}
+	imageSync.Wait()
 }
 
-func handleImage(image *Image, client *Client, grace *time.Duration, bool output) (error) {
+func handleImage(image *docker.Image, client *docker.Client, grace time.Duration, output bool) {
 }
 
-func collectAPIContainers(containers []APIContainers, client *Client, ctx *cli.Context) (error) {
+func collectAPIContainers(containers []docker.APIContainers, client *docker.Client, ctx *cli.Context) {
+	var containerSync sync.WaitGroup
+	for _, container := range containers {
+		containerSync.Add(1)
+		go func(container *docker.APIContainers, client *docker.Client, grace time.Duration, output bool) {
+			defer containerSync.Done()
+			containerDetail, _ := client.InspectContainer(container.ID)
+			handleContainer(containerDetail, client, grace, output)
+		}(&container, client, ctx.Duration("grace"), ctx.Bool("verbose"))
+	}
+	containerSync.Wait()
 }
 
-func handleContainer(container *Container, client *Client, grace *time.Duration, bool output) (error) {
+func handleContainer(container *docker.Container, client *docker.Client, grace time.Duration, output bool) {
 }
 
 func runDgc(ctx *cli.Context) {
+	var dgcSync sync.WaitGroup
 	client, _ := docker.NewClient(ctx.String("socket"))
 	images, _ := client.ListImages(docker.ListImagesOptions{All: false})
 	containers, _ := client.ListContainers(docker.ListContainersOptions{All: false})
-	collectAPIContainers(containers, &client, ctx)
-	collectAPIImages(containers, &client, ctx)
+	dgcSync.Add(2)
+	go func(containers []docker.APIContainers, client *docker.Client, ctx *cli.Context) {
+		defer dgcSync.Done()
+		collectAPIContainers(containers, client, ctx)
+	}(containers, client, ctx)
+	go func(images []docker.APIImages, client *docker.Client, ctx *cli.Context) {
+		defer dgcSync.Done()
+		collectAPIImages(images, client, ctx)
+	}(images, client, ctx)
+	dgcSync.Wait()
 }
 
 func main() {
