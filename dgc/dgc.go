@@ -1,5 +1,6 @@
 package main
 
+
 import (
 	"os"
 	"time"
@@ -16,7 +17,7 @@ func collectAPIImages(images []docker.APIImages, client *docker.Client, ctx *cli
 			defer imageSync.Done()
 			imageDetail, _ := client.InspectImage(image.ID)
 			handleImage(imageDetail, client, grace, output)
-		}(&image, client, ctx.Duration("grace"), ctx.BoolT("quiet"))
+		}(&image, client, ctx.Duration("grace"), ctx.Bool("quiet"))
 	}
 	imageSync.Wait()
 }
@@ -32,7 +33,7 @@ func collectAPIContainers(containers []docker.APIContainers, client *docker.Clie
 			defer containerSync.Done()
 			containerDetail, _ := client.InspectContainer(container.ID)
 			handleContainer(containerDetail, client, grace, output)
-		}(&container, client, ctx.Duration("grace"), ctx.BoolT("quiet"))
+		}(&container, client, ctx.Duration("grace"), ctx.Bool("quiet"))
 	}
 	containerSync.Wait()
 }
@@ -84,7 +85,7 @@ func main() {
 			Usage: "the list of containers to exclude from garbage collection, as a file or directory",
 			EnvVar: "EXCLUDE_FROM_GC",
 		},
-		cli.BoolTFlag {
+		cli.BoolFlag {
 			Name: "quiet, q",
 			Usage: "don't print name of garbage-collected containers",
 			EnvVar: "QUIET",
