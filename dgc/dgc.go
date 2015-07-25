@@ -24,8 +24,8 @@ func collectAPIImages(images []docker.APIImages, client *docker.Client, ctx *cli
 func handleImage(image *docker.Image, client *docker.Client, grace time.Duration, quiet bool, force bool, noPrune bool) {
 	now := time.Now()
 	options := docker.RemoveImageOptions{
-		force,
-		noPrune,
+		Force:   force,
+		NoPrune: noPrune,
 	}
 	if now.Sub(image.Created) >= grace {
 		client.RemoveImageExtended(image.ID, options)
@@ -48,9 +48,9 @@ func collectAPIContainers(containers []docker.APIContainers, client *docker.Clie
 func handleContainer(container *docker.Container, client *docker.Client, grace time.Duration, quiet bool, force bool, removeVolumes bool) {
 	now := time.Now()
 	options := docker.RemoveContainerOptions{
-		container.ID,
-		removeVolumes,
-		force,
+		ID:            container.ID,
+		RemoveVolumes: removeVolumes,
+		Force:         force,
 	}
 	if now.Sub(container.Created) >= grace {
 		client.RemoveContainer(options)
