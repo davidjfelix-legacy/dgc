@@ -13,32 +13,49 @@ func collectAPIImages(images []docker.APIImages, client *docker.Client, ctx *cli
 	var imageSync sync.WaitGroup
 	for _, image := range images {
 		imageSync.Add(1)
-		go func(image *docker.APIImages, client *docker.Client, grace time.Duration, output bool) {
+		go func(image *docker.APIImages, client *docker.Client, grace time.Duration, quiet bool, force bool, noPrune bool) {
 			defer imageSync.Done()
 			imageDetail, _ := client.InspectImage(image.ID)
-			handleImage(imageDetail, client, grace, output)
-		}(&image, client, ctx.Duration("grace"), ctx.Bool("quiet"))
+			handleImage(imageDetail, client, grace, quiet, force, noPrune)
+		}(&image, client, ctx.Duration("grace"), ctx.Bool("quiet"), ctx.Bool("force"), ctx.Bool("no-prune"))
 	}
 	imageSync.Wait()
 }
 
-func handleImage(image *docker.Image, client *docker.Client, grace time.Duration, output bool) {
+func handleImage(image *docker.Image, client *docker.Client, grace time.Duration, quiet bool, force bool, noPrune bool) {
+	now := time.Now()
+	options := docker.RemoveImageOptions {
+		force,
+		noPrune,
+	}
+	if now.Sub(image.Created) >= grace {
+		client.RemoveImageExtended(image.ID, options)
+	}
 }
 
 func collectAPIContainers(containers []docker.APIContainers, client *docker.Client, ctx *cli.Context) {
 	var containerSync sync.WaitGroup
 	for _, container := range containers {
 		containerSync.Add(1)
-		go func(container *docker.APIContainers, client *docker.Client, grace time.Duration, output bool) {
+		go func(container *docker.APIContainers, client *docker.Client, grace time.Duration, quiet bool, force bool, removeVolumes bool) {
 			defer containerSync.Done()
 			containerDetail, _ := client.InspectContainer(container.ID)
-			handleContainer(containerDetail, client, grace, output)
-		}(&container, client, ctx.Duration("grace"), ctx.Bool("quiet"))
+			handleContainer(containerDetail, client, grace, quiet, force, removeVolumes)
+		}(&container, client, ctx.Duration("grace"), ctx.Bool("quiet"), ctx.Bool("force"), ctx.BoolT("remove-volumes"))
 	}
 	containerSync.Wait()
 }
 
-func handleContainer(container *docker.Container, client *docker.Client, grace time.Duration, output bool) {
+func handleContainer(container *docker.Container, client *docker.Client, grace time.Duration, quiet bool, force bool, removeVolumes bool) {
+	now := time.Now()
+	options := docker.RemoveContainerOptions {
+		container.ID,
+		removeVolumes,
+		force,
+	}
+	if now.Sub(container.Created) >= grace {
+		client.RemoveContainer(options)
+	}
 }
 
 func runDgc(ctx *cli.Context) {
@@ -88,7 +105,18 @@ func main() {
 		cli.BoolFlag {
 			Name: "quiet, q",
 			Usage: "don't print name of garbage-collected containers",
-			EnvVar: "QUIET",
+		},
+		cli.BoolTFlag {
+			Name: "remove-volumes, r",
+			Usage: "remove volumes with the container",
+		},
+		cli.BoolFlag {
+			Name: "force, f",
+			Usage: "force images and containers to stop and be collected",
+		},
+		cli.BoolFlag {
+			Name: "no-prune, n",
+			Usage: "don't prune parent images to a GC'd image",
 		},
 	}
 	dgc.Run(os.Args)
