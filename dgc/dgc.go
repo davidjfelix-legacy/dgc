@@ -1,12 +1,11 @@
 package main
 
-
 import (
-	"os"
-	"time"
-	"sync"
 	"github.com/codegangsta/cli"
 	"github.com/fsouza/go-dockerclient"
+	"os"
+	"sync"
+	"time"
 )
 
 func collectAPIImages(images []docker.APIImages, client *docker.Client, ctx *cli.Context) {
@@ -24,7 +23,7 @@ func collectAPIImages(images []docker.APIImages, client *docker.Client, ctx *cli
 
 func handleImage(image *docker.Image, client *docker.Client, grace time.Duration, quiet bool, force bool, noPrune bool) {
 	now := time.Now()
-	options := docker.RemoveImageOptions {
+	options := docker.RemoveImageOptions{
 		force,
 		noPrune,
 	}
@@ -48,7 +47,7 @@ func collectAPIContainers(containers []docker.APIContainers, client *docker.Clie
 
 func handleContainer(container *docker.Container, client *docker.Client, grace time.Duration, quiet bool, force bool, removeVolumes bool) {
 	now := time.Now()
-	options := docker.RemoveContainerOptions {
+	options := docker.RemoveContainerOptions{
 		container.ID,
 		removeVolumes,
 		force,
@@ -83,39 +82,39 @@ func main() {
 	dgc.Version = "0.1.0"
 	dgc.Author = "David J Felix <davidjfelix@davidjfelix.com>"
 	dgc.Action = runDgc
-	dgc.Flags = []cli.Flag {
-		cli.DurationFlag {
-			Name: "grace, g",
-			Value: time.Duration(3600)*time.Second,
-			Usage: "the grace period for a container. Accepted compostable time units: [h, m, s, ms, ns us]",
+	dgc.Flags = []cli.Flag{
+		cli.DurationFlag{
+			Name:   "grace, g",
+			Value:  time.Duration(3600) * time.Second,
+			Usage:  "the grace period for a container. Accepted compostable time units: [h, m, s, ms, ns us]",
 			EnvVar: "GRACE_PERIOD_SECONDS,GRACE_PERIOD",
 		},
-		cli.StringFlag {
-			Name: "socket, s",
-			Value: "unix:///var/run/docker.sock",
-			Usage: "the docker remote socket",
+		cli.StringFlag{
+			Name:   "socket, s",
+			Value:  "unix:///var/run/docker.sock",
+			Usage:  "the docker remote socket",
 			EnvVar: "DOCKER_SOCKET",
 		},
-		cli.StringFlag {
-			Name: "exclude, e",
-			Value: "/etc/docker-gc-exclude",
-			Usage: "the list of containers to exclude from garbage collection, as a file or directory",
+		cli.StringFlag{
+			Name:   "exclude, e",
+			Value:  "/etc/docker-gc-exclude",
+			Usage:  "the list of containers to exclude from garbage collection, as a file or directory",
 			EnvVar: "EXCLUDE_FROM_GC",
 		},
-		cli.BoolFlag {
-			Name: "quiet, q",
+		cli.BoolFlag{
+			Name:  "quiet, q",
 			Usage: "don't print name of garbage-collected containers",
 		},
-		cli.BoolTFlag {
-			Name: "remove-volumes, r",
+		cli.BoolTFlag{
+			Name:  "remove-volumes, r",
 			Usage: "remove volumes with the container",
 		},
-		cli.BoolFlag {
-			Name: "force, f",
+		cli.BoolFlag{
+			Name:  "force, f",
 			Usage: "force images and containers to stop and be collected",
 		},
-		cli.BoolFlag {
-			Name: "no-prune, n",
+		cli.BoolFlag{
+			Name:  "no-prune, n",
 			Usage: "don't prune parent images to a GC'd image",
 		},
 	}
