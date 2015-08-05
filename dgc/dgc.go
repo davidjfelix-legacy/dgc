@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/codegangsta/cli"
 	"github.com/fsouza/go-dockerclient"
+	"fmt"
 	"os"
 	"sync"
 	"time"
@@ -10,51 +11,65 @@ import (
 
 func collectAPIImages(images []docker.APIImages, client *docker.Client, ctx *cli.Context) {
 	var imageSync sync.WaitGroup
+	grace := ctx.Duration("grace")
+	quiet := ctx.Bool("quiet")
+	options := docker.RemoveImageOptions{
+		Force:   ctx.Bool("force"),
+		NoPrune: ctx.Bool("no-prune"),
+	}
 	for _, image := range images {
 		imageSync.Add(1)
-		go func(image *docker.APIImages, client *docker.Client, grace time.Duration, quiet bool, force bool, noPrune bool) {
+		go func(image *docker.APIImages) {
 			defer imageSync.Done()
 			imageDetail, _ := client.InspectImage(image.ID)
-			handleImage(imageDetail, client, grace, quiet, force, noPrune)
-		}(&image, client, ctx.Duration("grace"), ctx.Bool("quiet"), ctx.Bool("force"), ctx.Bool("no-prune"))
+			now := time.Now()
+			if now.Sub(imageDetail.Created) >= grace {
+				client.RemoveImageExtended(image.ID, options)
+				if !quiet {
+					//TODO: inject image name
+					fmt.Printf("Deleting image.\n")
+				}
+			} else {
+				if !quiet {
+					//TODO: inject image name
+					fmt.Printf("Not deleting image.\n")
+				}
+			}
+		}(&image)
 	}
 	imageSync.Wait()
 }
 
-func handleImage(image *docker.Image, client *docker.Client, grace time.Duration, quiet bool, force bool, noPrune bool) {
-	now := time.Now()
-	options := docker.RemoveImageOptions{
-		Force:   force,
-		NoPrune: noPrune,
-	}
-	if now.Sub(image.Created) >= grace {
-		client.RemoveImageExtended(image.ID, options)
-	}
-}
-
 func collectAPIContainers(containers []docker.APIContainers, client *docker.Client, ctx *cli.Context) {
 	var containerSync sync.WaitGroup
+	grace := ctx.Duration("grace")
+	quiet := ctx.Bool("quiet")
 	for _, container := range containers {
 		containerSync.Add(1)
-		go func(container *docker.APIContainers, client *docker.Client, grace time.Duration, quiet bool, force bool, removeVolumes bool) {
+		go func(container *docker.APIContainers){
 			defer containerSync.Done()
 			containerDetail, _ := client.InspectContainer(container.ID)
-			handleContainer(containerDetail, client, grace, quiet, force, removeVolumes)
-		}(&container, client, ctx.Duration("grace"), ctx.Bool("quiet"), ctx.Bool("force"), ctx.BoolT("remove-volumes"))
+			now := time.Now()
+			if now.Sub(containerDetail.Created) >= grace {
+				options := docker.RemoveContainerOptions{
+					ID:            containerDetail.ID,
+					RemoveVolumes: ctx.Bool("remove-volumes"),
+					Force:         ctx.Bool("force"),
+				}
+				client.RemoveContainer(options)
+				if !quiet {
+					//TODO: inject container name
+					fmt.Printf("Deleting container.\n")
+				}
+			} else {
+				if !quiet {
+					//TODO: inject container name
+					fmt.Printf("Not deleting container.\n")
+				}
+			}
+		}(&container)
 	}
 	containerSync.Wait()
-}
-
-func handleContainer(container *docker.Container, client *docker.Client, grace time.Duration, quiet bool, force bool, removeVolumes bool) {
-	now := time.Now()
-	options := docker.RemoveContainerOptions{
-		ID:            container.ID,
-		RemoveVolumes: removeVolumes,
-		Force:         force,
-	}
-	if now.Sub(container.Created) >= grace {
-		client.RemoveContainer(options)
-	}
 }
 
 func runDgc(ctx *cli.Context) {
