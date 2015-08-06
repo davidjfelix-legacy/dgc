@@ -19,23 +19,18 @@ func collectAPIImages(images []docker.APIImages, client *docker.Client, ctx *cli
 	}
 	for _, image := range images {
 		imageSync.Add(1)
-		go func(image *docker.APIImages) {
+		go func(image docker.APIImages) {
 			defer imageSync.Done()
 			imageDetail, _ := client.InspectImage(image.ID)
 			now := time.Now()
 			if now.Sub(imageDetail.Created) >= grace {
-				client.RemoveImageExtended(image.ID, options)
-				if !quiet {
-					//TODO: inject image name
-					fmt.Printf("Deleting image.\n")
-				}
-			} else {
-				if !quiet {
-					//TODO: inject image name
-					fmt.Printf("Not deleting image.\n")
+				if err := client.RemoveImageExtended(imageDetail.ID, options); err == nil {
+					if !quiet {
+						fmt.Printf("Deleting image: %s.\n", imageDetail.ID)
+					}
 				}
 			}
-		}(&image)
+		}(image)
 	}
 	imageSync.Wait()
 }
@@ -46,7 +41,7 @@ func collectAPIContainers(containers []docker.APIContainers, client *docker.Clie
 	quiet := ctx.Bool("quiet")
 	for _, container := range containers {
 		containerSync.Add(1)
-		go func(container *docker.APIContainers){
+		go func(container docker.APIContainers){
 			defer containerSync.Done()
 			containerDetail, _ := client.InspectContainer(container.ID)
 			now := time.Now()
@@ -56,18 +51,13 @@ func collectAPIContainers(containers []docker.APIContainers, client *docker.Clie
 					RemoveVolumes: ctx.Bool("remove-volumes"),
 					Force:         ctx.Bool("force"),
 				}
-				client.RemoveContainer(options)
-				if !quiet {
-					//TODO: inject container name
-					fmt.Printf("Deleting container.\n")
-				}
-			} else {
-				if !quiet {
-					//TODO: inject container name
-					fmt.Printf("Not deleting container.\n")
+				if err := client.RemoveContainer(options); err == nil {
+					if !quiet {
+						fmt.Printf("Deleting container: %s.\n", containerDetail.ID)
+					}
 				}
 			}
-		}(&container)
+		}(container)
 	}
 	containerSync.Wait()
 }
@@ -75,8 +65,8 @@ func collectAPIContainers(containers []docker.APIContainers, client *docker.Clie
 func runDgc(ctx *cli.Context) {
 	var dgcSync sync.WaitGroup
 	client, _ := docker.NewClient(ctx.String("socket"))
-	images, _ := client.ListImages(docker.ListImagesOptions{All: false})
-	containers, _ := client.ListContainers(docker.ListContainersOptions{All: false})
+	images, _ := client.ListImages(docker.ListImagesOptions{All: true})
+	containers, _ := client.ListContainers(docker.ListContainersOptions{All: true})
 	dgcSync.Add(2)
 	go func(containers []docker.APIContainers, client *docker.Client, ctx *cli.Context) {
 		defer dgcSync.Done()
