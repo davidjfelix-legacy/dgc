@@ -9,6 +9,9 @@ import (
 	"time"
 )
 
+func readExcludes() {
+}
+
 func collectAPIImages(images []docker.APIImages, client *docker.Client, ctx *cli.Context, excludes []string) {
 	var imageSync sync.WaitGroup
 	grace := ctx.Duration("grace")
