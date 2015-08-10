@@ -3,13 +3,26 @@ package main
 import (
 	"github.com/codegangsta/cli"
 	"github.com/fsouza/go-dockerclient"
-	"fmt"
+	"log"
 	"os"
 	"sync"
 	"time"
 )
 
-func readExcludes() {
+func readExcludes(fileName string) []string {
+	var excludeNames []string = []
+	if file, err := os.Open(fileName); err != nil {
+    		log.Fatal("Error opening input file:", err)
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		append(excludeNames, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		log.Fatal("Error reading exclude file:", scanner.Err())
+	}
+	return excludeNames
 }
 
 func collectAPIImages(images []docker.APIImages, client *docker.Client, ctx *cli.Context, excludes []string) {
@@ -29,7 +42,7 @@ func collectAPIImages(images []docker.APIImages, client *docker.Client, ctx *cli
 			if now.Sub(imageDetail.Created) >= grace {
 				if err := client.RemoveImageExtended(imageDetail.ID, options); err == nil {
 					if !quiet {
-						fmt.Printf("Deleted image: %s.\n", imageDetail.ID)
+						log.Printf("Deleted image: %s.\n", imageDetail.ID)
 					}
 				}
 			}
@@ -56,7 +69,7 @@ func collectAPIContainers(containers []docker.APIContainers, client *docker.Clie
 				}
 				if err := client.RemoveContainer(options); err == nil {
 					if !quiet {
-						fmt.Printf("Deleted container: %s.\n", containerDetail.ID)
+						log.Printf("Deleted container: %s.\n", containerDetail.ID)
 					}
 				}
 			}
@@ -70,7 +83,7 @@ func runDgc(ctx *cli.Context) {
 	client, _ := docker.NewClient(ctx.String("socket"))
 	images, _ := client.ListImages(docker.ListImagesOptions{All: true})
 	containers, _ := client.ListContainers(docker.ListContainersOptions{All: true})
-	excludes, _ := readLines(ctx.String("exclude"))
+	excludes := readExcludes(ctx.String("exclude"))
 	dgcSync.Add(2)
 	go func() {
 		defer dgcSync.Done()
