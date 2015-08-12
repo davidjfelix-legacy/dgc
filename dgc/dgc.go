@@ -33,21 +33,40 @@ func collectAPIImages(images []docker.APIImages, client *docker.Client, ctx *cli
 		Force:   ctx.Bool("force"),
 		NoPrune: ctx.Bool("no-prune"),
 	}
+	
 	for _, image := range images {
 		imageSync.Add(1)
 		go func(image docker.APIImages) {
 			defer imageSync.Done()
+			
+			// Check if the image id or tag is on excludes list
+			for _, excludeName := range excludes {
+				if image.ID == excludeName {
+					return
+				}
+				for _, tag := range image.RepoTags {
+					if tag == excludeName {
+						return
+					}
+				}
+			}
+			
+			// End if the image is still in the grace period
 			imageDetail, _ := client.InspectImage(image.ID)
 			now := time.Now()
-			if now.Sub(imageDetail.Created) >= grace {
-				if err := client.RemoveImageExtended(imageDetail.ID, options); err == nil {
-					if !quiet {
-						log.Printf("Deleted image: %s.\n", imageDetail.ID)
-					}
+			if now.Sub(imageDetail.Created) < grace {
+				return
+			}
+			
+			// Delete image
+			if err := client.RemoveImageExtended(imageDetail.ID, options); err == nil {
+				if !quiet {
+					log.Printf("Deleted image: %s.\n", imageDetail.ID)
 				}
 			}
 		}(image)
 	}
+	
 	imageSync.Wait()
 }
 
@@ -55,26 +74,48 @@ func collectAPIContainers(containers []docker.APIContainers, client *docker.Clie
 	var containerSync sync.WaitGroup
 	grace := ctx.Duration("grace")
 	quiet := ctx.Bool("quiet")
+	
 	for _, container := range containers {
 		containerSync.Add(1)
 		go func(container docker.APIContainers){
 			defer containerSync.Done()
+			
+			// Check if the container id or tag is on excludes list
+			for _, excludeName := range excludes {
+				if container.ID == excludeName {
+					return
+				}
+				if container.Image == excludeName {
+					return
+				}
+				for _, name := range container.Names {
+					if name == excludeName {
+						return
+					}
+				}
+			}
+			
+			// End if the container is still in the grace period
 			containerDetail, _ := client.InspectContainer(container.ID)
 			now := time.Now()
-			if now.Sub(containerDetail.Created) >= grace {
-				options := docker.RemoveContainerOptions{
-					ID:            containerDetail.ID,
-					RemoveVolumes: ctx.Bool("remove-volumes"),
-					Force:         ctx.Bool("force"),
-				}
-				if err := client.RemoveContainer(options); err == nil {
-					if !quiet {
-						log.Printf("Deleted container: %s.\n", containerDetail.ID)
-					}
+			if now.Sub(containerDetail.Created) < grace {
+				return
+			}
+			
+			// Delete container
+			options := docker.RemoveContainerOptions{
+				ID:            containerDetail.ID,
+				RemoveVolumes: ctx.Bool("remove-volumes"),
+				Force:         ctx.Bool("force"),
+			}
+			if err := client.RemoveContainer(options); err == nil {
+				if !quiet {
+					log.Printf("Deleted container: %s.\n", containerDetail.ID)
 				}
 			}
 		}(container)
 	}
+	
 	containerSync.Wait()
 }
 
