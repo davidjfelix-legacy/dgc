@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/codegangsta/cli"
 	"github.com/fsouza/go-dockerclient"
+	"bufio"
 	"log"
 	"os"
 	"sync"
@@ -10,14 +11,15 @@ import (
 )
 
 func readExcludes(fileName string) []string {
-	var excludeNames []string = []
-	if file, err := os.Open(fileName); err != nil {
+	var excludeNames []string
+	file, err := os.Open(fileName)
+	if err != nil {
     		log.Fatal("Error opening input file:", err)
 	}
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		append(excludeNames, scanner.Text())
+		excludeNames = append(excludeNames, scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
 		log.Fatal("Error reading exclude file:", scanner.Err())
