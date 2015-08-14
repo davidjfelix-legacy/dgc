@@ -123,10 +123,13 @@ func collectAPIContainers(containers []docker.APIContainers, client *docker.Clie
 
 func runDgc(ctx *cli.Context) {
 	var dgcSync sync.WaitGroup
+	var excludes []string
 	client, _ := docker.NewClient(ctx.String("socket"))
 	images, _ := client.ListImages(docker.ListImagesOptions{All: true})
 	containers, _ := client.ListContainers(docker.ListContainersOptions{All: true})
-	excludes := readExcludes(ctx.String("exclude"))
+	if ctx.String("exclude") != "" {
+		excludes = readExcludes(ctx.String("exclude"))
+	}
 	dgcSync.Add(2)
 	go func() {
 		defer dgcSync.Done()
@@ -162,7 +165,7 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:   "exclude, e",
-			Value:  "/etc/docker-gc-exclude",
+			Value:  "",
 			Usage:  "the list of containers to exclude from garbage collection, as a file or directory",
 			EnvVar: "EXCLUDE_FROM_GC",
 		},
