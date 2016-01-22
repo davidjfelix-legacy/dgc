@@ -1,0 +1,4 @@
+package: github.com/hatchery/dgc
+import:
+- package: github.com/codegangsta/cli
+- package: github.com/fsouza/go-dockerclient
