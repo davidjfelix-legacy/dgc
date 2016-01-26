@@ -8,6 +8,7 @@ import (
 	"os"
 	"sync"
 	"time"
+	"fmt"
 )
 
 func readExcludes(fileName string) []string {
@@ -125,12 +126,22 @@ func runDgc(ctx *cli.Context) {
 	var dgcSync sync.WaitGroup
 	var excludes []string
 	client, _ := docker.NewClient(ctx.String("socket"))
+	quiet := ctx.Bool("quiet")
+	if !quiet {
+		fmt.Printf("Getting Images...")
+	}
 	images, _ := client.ListImages(docker.ListImagesOptions{All: true})
+	if !queit {
+		fmt.Printf("Getting Containers...")
+	}
 	containers, _ := client.ListContainers(docker.ListContainersOptions{All: true})
 	if ctx.String("exclude") != "" {
 		excludes = readExcludes(ctx.String("exclude"))
 	}
 	dgcSync.Add(2)
+	if !quiet {
+		fmt.Printf("Cleaning...")
+	}
 	go func() {
 		defer dgcSync.Done()
 		collectAPIContainers(containers, client, ctx, excludes)
