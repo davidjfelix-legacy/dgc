@@ -1,4 +1,9 @@
 package: github.com/hatchery/dgc
 import:
 - package: github.com/codegangsta/cli
+  vcs: git
+  repo: git@github.com/codegangsta/cli
+  version: ^1.2.0
 - package: github.com/fsouza/go-dockerclient
+  vcs: git
+  repo: git@github.com/fsouza/go-dockerclient
