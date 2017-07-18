@@ -1,5 +1,8 @@
 language: go
 go: '1.8'
+install: true
+script:
+  - go build github.com/hatchery/dgc
 deploy:
   provider: releases
   api_key:
