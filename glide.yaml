@@ -1,0 +1,9 @@
+package: github.com/hatchery/dgc
+import:
+- package: github.com/urfave/cli
+  version: ^1.19.1
+- package: github.com/docker/docker
+  version: ^17.5.0-ce-rc3
+  subpackages:
+  - api/types
+  - client
