@@ -1,0 +1,11 @@
+hash: 52968d4bffc7f2d498a50a8d56326ea249c5f7a242679db4d2cf950173367a51
+updated: 2017-07-17T21:39:40.36597929-04:00
+imports:
+- name: github.com/docker/docker
+  version: 90d35abf7b3535c1c319c872900fbd76374e521c
+  subpackages:
+  - api/types
+  - client
+- name: github.com/urfave/cli
+  version: 0bdeddeeb0f650497d603c4ad7b20cfe685682f6
+testImports: []
