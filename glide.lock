@@ -1,8 +1,0 @@
-hash: 3e1871aa2431a896022d1058808b9fe2f3c4c9395c97f9673433bbd517ed204b
-updated: 2016-01-27T01:43:33.651837518Z
-imports:
-- name: github.com/codegangsta/cli
-  version: f9cc3001e04f9783cb4ad08ca6791aa07134787c
-- name: github.com/fsouza/go-dockerclient
-  version: 7b651349f9479f5114913eefbfd3c4eeddd79ab4
-devImports: []
