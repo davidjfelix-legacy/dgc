@@ -3,12 +3,14 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/codegangsta/cli"
-	"github.com/fsouza/go-dockerclient"
+	"github.com/urfave/cli"
+	dockerTypes "github.com/docker/docker/api/types"
+	dockerClient "github.com/docker/docker/client"
 	"log"
 	"os"
 	"sync"
 	"time"
+	"context"
 )
 
 func readExcludes(fileName string) []string {
@@ -28,18 +30,18 @@ func readExcludes(fileName string) []string {
 	return excludeNames
 }
 
-func collectAPIImages(images []docker.APIImages, client *docker.Client, ctx *cli.Context, excludes []string) {
+func collectAPIImages(images []dockerTypes.ImageSummary, client *dockerClient.Client, ctx *cli.Context, excludes []string) {
 	var imageSync sync.WaitGroup
 	grace := ctx.Duration("grace")
 	quiet := ctx.Bool("quiet")
-	options := docker.RemoveImageOptions{
-		Force:   ctx.Bool("force"),
-		NoPrune: ctx.Bool("no-prune"),
+	options := dockerTypes.ImageRemoveOptions{
+		Force:         ctx.Bool("force"),
+		PruneChildren: ctx.Bool("no-prune"),
 	}
 
 	for _, image := range images {
 		imageSync.Add(1)
-		go func(image docker.APIImages) {
+		go func(image dockerTypes.ImageSummary) {
 			defer imageSync.Done()
 
 			// Check if the image id or tag is on excludes list
@@ -57,26 +59,21 @@ func collectAPIImages(images []docker.APIImages, client *docker.Client, ctx *cli
 			// End if the image is still in the grace period
 			log.Printf("Inspecting image: %s\n", image.ID)
 
-			imageDetail, err := client.InspectImage(image.ID)
-			if err != nil {
-				log.Printf("Error. Failed to inspect image: %s\n", image.ID)
-				return
-			}
 			now := time.Now()
-			if now.Sub(imageDetail.Created) < grace {
+			if now.Sub(time.Unix(image.Created, 0)) < grace {
 				return
 			}
 
 			// Delete image
-			log.Printf("Deleting image: %s\n", imageDetail.ID)
+			log.Printf("Deleting image: %s\n", image.ID)
 
-			if err := client.RemoveImageExtended(imageDetail.ID, options); err == nil {
-				log.Printf("Deleted image: %s\n", imageDetail.ID)
+			if _, err := client.ImageRemove(context.Background(), image.ID, options); err == nil {
+				log.Printf("Deleted image: %s\n", image.ID)
 				if !quiet {
-					fmt.Printf("Deleted image: %s\n", imageDetail.ID)
+					fmt.Printf("Deleted image: %s\n", image.ID)
 				}
 			} else {
-				log.Printf("Error. Failed to delete image: %s\n", imageDetail.ID)
+				log.Printf("Error. Failed to delete image: %s\n", image.ID)
 				return
 			}
 		}(image)
@@ -85,14 +82,14 @@ func collectAPIImages(images []docker.APIImages, client *docker.Client, ctx *cli
 	imageSync.Wait()
 }
 
-func collectAPIContainers(containers []docker.APIContainers, client *docker.Client, ctx *cli.Context, excludes []string) {
+func collectAPIContainers(containers []dockerTypes.Container, client *dockerClient.Client, ctx *cli.Context, excludes []string) {
 	var containerSync sync.WaitGroup
 	grace := ctx.Duration("grace")
 	quiet := ctx.Bool("quiet")
 
 	for _, container := range containers {
 		containerSync.Add(1)
-		go func(container docker.APIContainers) {
+		go func(container dockerTypes.Container) {
 			defer containerSync.Done()
 
 			// Check if the container id or tag is on excludes list
@@ -111,34 +108,26 @@ func collectAPIContainers(containers []docker.APIContainers, client *docker.Clie
 			}
 
 			// End if the container is still in the grace period
-			log.Printf("Inspecting container: %s\n", container.ID)
-
-			containerDetail, err := client.InspectContainer(container.ID)
-			if err != nil {
-				log.Printf("Error. Failed to inspect container: %s\n", container.ID)
-				return
-			}
 			now := time.Now()
-			if now.Sub(containerDetail.Created) < grace {
+			if now.Sub(time.Unix(container.Created, 0)) < grace {
 				return
 			}
 
 			// Delete container
-			options := docker.RemoveContainerOptions{
-				ID:            containerDetail.ID,
+			options := dockerTypes.ContainerRemoveOptions{
 				RemoveVolumes: ctx.Bool("remove-volumes"),
 				Force:         ctx.Bool("force"),
 			}
 
-			log.Printf("Deleting container: %s\n", containerDetail.ID)
+			log.Printf("Deleting container: %s\n", container.ID)
 
-			if err := client.RemoveContainer(options); err == nil {
-				log.Printf("Deleted container: %s\n", containerDetail.ID)
+			if err := client.ContainerRemove(context.Background(), container.ID, options); err == nil {
+				log.Printf("Deleted container: %s\n", container.ID)
 				if !quiet {
-					fmt.Printf("Deleted container: %s\n", containerDetail.ID)
+					fmt.Printf("Deleted container: %s\n", container.ID)
 				}
 			} else {
-				log.Printf("Error. Failed to delete container: %s\n", containerDetail.ID)
+				log.Printf("Error. Failed to delete container: %s\n", container.ID)
 				return
 			}
 		}(container)
@@ -151,19 +140,20 @@ func runDgc(ctx *cli.Context) {
 	var dgcSync sync.WaitGroup
 	var excludes []string
 
-	client, err := docker.NewClient(ctx.String("socket"))
+	// TODO: change this to use socket
+	client, err := dockerClient.NewEnvClient()
 	if err != nil {
-		log.Fatal("Error. Failed to create a docker client to: %s", ctx.String("socket"))
+		log.Fatalf("Error. Failed to create a docker client to: %s", ctx.String("socket"))
 	}
 
 	log.Println("Getting a List of images...")
-	images, err := client.ListImages(docker.ListImagesOptions{All: true})
+	images, err := client.ImageList(context.Background(), dockerTypes.ImageListOptions{All: true})
 	if err != nil {
 		log.Fatal("Error. Failed to retrieve images from the docker host.")
 	}
 
 	log.Println("Getting a list of containers...")
-	containers, err := client.ListContainers(docker.ListContainersOptions{All: true})
+	containers, err := client.ContainerList(context.Background(), dockerTypes.ContainerListOptions{All: true})
 	if err != nil {
 		log.Fatal("Error. Failed to retrieve containers from the docker host.")
 	}
