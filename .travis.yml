@@ -2,3 +2,11 @@ language: go
 go:
 - '1.0'
 - '1.3'
+deploy:
+  provider: releases
+  api_key:
+    secure: FWHo4XpHWrvIclK1uyYzdZRvCbRJcBYfU4H3VAAwPHwvHRDom/OTwcIof9xniYVHm/pdpQVR7dC50TGxaFAOXGF/nmGL9uwYEedVVT2MJ5bGeVYxyuDXkR0ngmbXo9it8VwLfvDY45vttW6P4AKjdo7TaK0jLqX/usxZ7tWxSs6a0UN6x49kIZ/N14IX5yDU1ZeL94Q9q/8Nzr7qf1xvR6pwEfPcv10cAJXu3DbwaSTPHxniUBo0S6E0JqAQW6rOkt1J4XSb1kuO79PwXg/tpED6udbVVCc3Mfz7yIBzw1DdvQFw6gZCG8ZCYdesNLFDsMADai5w/31x/BpfG7EeFiRf7gXn1LE3mOriMjYd1ruN5tAMkMffw7lxZq1zZm4NfXqNWoiHx4Ms2e1ztprv8JlTrrye5KpMFU0ktVDPi1YvUO47iGks9MCtEfWenu6AYPXJXI+0yd7camfeQn2+QBJDN8xSAdyZNVEFT21D6qISctSmBoSlLajJU1TdIFQnmKsF1Mbut6B3i8I7t3ihqNFEj1JNqybS8iup4bGD3d2Gs/d6niYM9aIdN11kNdElq9V5jTHHWuDU3IwfNmuznSyS5L6mEV8tA+fdUqR95wIYO54cmTUhFIfKmocpRKPaFN85l4HmofjeYkmZN2QasrNoD5lFfb6y3L1Y5pEd/Ds=
+  file: dgc
+  on:
+    repo: hatchery/dgc
+    tags: true
