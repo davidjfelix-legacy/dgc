@@ -1,11 +1,69 @@
-hash: 52968d4bffc7f2d498a50a8d56326ea249c5f7a242679db4d2cf950173367a51
-updated: 2017-07-17T21:39:40.36597929-04:00
+hash: 5216d4c4a96f6cf406e7c87a9d6196c22653bd5b8c6687822a99cf9622b7e49e
+updated: 2017-07-20T18:33:41.559591732-04:00
 imports:
+- name: github.com/docker/distribution
+  version: 91c507a39abfce14b5c8541cf284330e22208c0f
+  subpackages:
+  - digestset
+  - reference
 - name: github.com/docker/docker
   version: 90d35abf7b3535c1c319c872900fbd76374e521c
   subpackages:
+  - api
   - api/types
+  - api/types/blkiodev
+  - api/types/container
+  - api/types/events
+  - api/types/filters
+  - api/types/image
+  - api/types/mount
+  - api/types/network
+  - api/types/registry
+  - api/types/strslice
+  - api/types/swarm
+  - api/types/time
+  - api/types/versions
+  - api/types/volume
   - client
+  - pkg/ioutils
+  - pkg/longpath
+  - pkg/system
+  - pkg/tlsconfig
+- name: github.com/docker/go-connections
+  version: 3ede32e2033de7505e6500d6c868c2b9ed9f169d
+  subpackages:
+  - nat
+  - sockets
+  - tlsconfig
+- name: github.com/docker/go-units
+  version: 0dadbb0345b35ec7ef35e228dabb8de89a65bf52
+- name: github.com/docker/libtrust
+  version: aabc10ec26b754e797f9028f4589c5b7bd90dc20
+- name: github.com/inconshreveable/mousetrap
+  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/Microsoft/go-winio
+  version: c4dc1301f1dc0307acd38e611aa375a64dfe0642
+- name: github.com/opencontainers/go-digest
+  version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
+- name: github.com/pkg/errors
+  version: c605e284fe17294bda444b34710735b29d1a9d90
+- name: github.com/Sirupsen/logrus
+  version: 9b48ece7fc373043054858f8c0d362665e866004
+- name: github.com/spf13/cobra
+  version: de09d9ce07d0d8a74442cfeaa91628cf9492cc23
+- name: github.com/spf13/pflag
+  version: 25f8b5b07aece3207895bf19f7ab517eb3b22a40
 - name: github.com/urfave/cli
   version: 0bdeddeeb0f650497d603c4ad7b20cfe685682f6
+- name: golang.org/x/net
+  version: 48359f4f600b3a2d5cf657458e3f940021631a56
+  subpackages:
+  - context
+  - context/ctxhttp
+  - proxy
+- name: golang.org/x/sys
+  version: d75a52659825e75fff6158388dddc6a5b04f9ba5
+  subpackages:
+  - unix
+  - windows
 testImports: []
